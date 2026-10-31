@@ -57,7 +57,7 @@
         153: "YouTube refuse la lecture : la page de l'écran doit être hébergée en HTTPS (Config.ScreenUrl, voir README.md).",
     };
 
-    function buildYoutube(d) {
+    function buildYoutube(d, alt) {
         stage.innerHTML = '<div id="yt"></div>';
         const myKey = keyOf(d);
         whenYT(() => {
@@ -66,13 +66,27 @@
                 autoplay: 1, controls: 0, disablekb: 1, fs: 0, rel: 0, modestbranding: 1,
                 iv_load_policy: 3, playsinline: 1, start: Math.max(0, Math.floor(d.position || 0)),
             };
-            if (location.protocol.indexOf('http') === 0) vars.origin = location.origin;
+            if (location.protocol.indexOf('http') === 0) {
+                vars.origin = location.origin;
+                vars.widget_referrer = location.href;
+            }
             yt = new YT.Player('yt', {
-                host: 'https://www.youtube-nocookie.com',
+                // 1re tentative : youtube-nocookie ; si erreur 153, 2e tentative sur youtube.com
+                host: alt ? 'https://www.youtube.com' : 'https://www.youtube-nocookie.com',
                 width: '100%', height: '100%', videoId: d.embed, playerVars: vars,
                 events: {
                     onReady: () => { ytReady = true; try { yt.setVolume(volume); } catch (e) {} syncYoutube(desired); },
-                    onError: (ev) => showMsg(YT_ERRORS[ev.data] || ('Erreur YouTube (' + ev.data + ')')),
+                    onError: (ev) => {
+                        if (ev.data === 153 && !alt) {
+                            yt = null; ytReady = false;
+                            buildYoutube(d, true);
+                            return;
+                        }
+                        let m = YT_ERRORS[ev.data] || ('Erreur YouTube (' + ev.data + ')');
+                        // page réellement chargée, pour le diagnostic
+                        if (ev.data === 153) m += ' [page : ' + location.href + ']';
+                        showMsg(m);
+                    },
                 },
             });
         });
