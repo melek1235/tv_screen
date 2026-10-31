@@ -118,7 +118,7 @@
         hideMsg();
         const base = d.kind === 'vod' ? 'https://player.kick.com/video/' : 'https://player.kick.com/';
         const f = document.createElement('iframe');
-        f.src = base + encodeURIComponent(d.embed) + '?autoplay=true&muted=' + (kickMuted ? 'true' : 'false');
+        f.src = base + encodeURIComponent(d.embed) + '?autoplay=true' + (kickMuted ? '&muted=true' : '');
         f.allow = 'autoplay; fullscreen; encrypted-media';
         f.setAttribute('scrolling', 'no');
         f.setAttribute('frameborder', '0');
